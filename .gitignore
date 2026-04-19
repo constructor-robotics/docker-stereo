@@ -1,0 +1,13 @@
+# colcon build artifacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+user_ws/build/
+user_ws/install/
+user_ws/log/
+
+# editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

@@ -1,0 +1,54 @@
+services:
+  zed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zed-custom:latest
+    container_name: ${container_name}
+    hostname: ${hostname}
+    # Make the container's hostname resolve locally so DDS doesn't advertise
+    # an unroutable address to peers on the LAN.
+    extra_hosts:
+      - "${hostname}:127.0.0.1"
+    privileged: true      # needed for USB camera access (ZED is USB or GMSL)
+    stdin_open: true      # -i
+    tty: true             # -t
+    network_mode: host    # DDS discovery on the host LAN (matches the other services)
+    ipc: host             # shared-memory DDS transport — useful for heavy ZED image topics
+    pid: host             # so `ros2 node list` sees host nodes and vice versa
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+      - ROS_LOCALHOST_ONLY=${ROS_LOCALHOST_ONLY}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION}
+      - FASTDDS_DEFAULT_PROFILES_FILE=${FASTDDS_DEFAULT_PROFILES_FILE}
+      - CYCLONEDDS_URI=${CYCLONEDDS_URI}
+      - RMW_ZENOH_CONFIG_FILE=${RMW_ZENOH_CONFIG_FILE}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev                              # ZED USB + other devices
+      # DDS profiles — same layout as the other services in this repo.
+      - ./dds_profiles:/dds_profiles:ro
+      # Your own ROS 2 packages — mounted as a SEPARATE workspace so the
+      # pre-built ZED wrapper workspace at /root/ros2_ws stays intact.
+      - ./user_ws:/root/user_ws
+      # Persist the per-serial calibration .conf downloaded from Stereolabs
+      # and the GPU-optimized Neural depth models, so they survive container
+      # recreation / rebuilds and don't re-download/re-optimize every time.
+      - zed_settings:/usr/local/zed/settings
+      - zed_resources:/usr/local/zed/resources
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: /bin/bash -l
+
+volumes:
+  zed_settings:
+  zed_resources:
