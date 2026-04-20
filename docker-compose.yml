@@ -27,6 +27,10 @@ services:
       - RMW_ZENOH_CONFIG_FILE=${RMW_ZENOH_CONFIG_FILE}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
+      # Force GLX to use the NVIDIA dGPU instead of the Intel iGPU —
+      # Arrow Lake's iris PCI ID is newer than the container's Mesa.
+      - __NV_PRIME_RENDER_OFFLOAD=1
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev                              # ZED USB + other devices
